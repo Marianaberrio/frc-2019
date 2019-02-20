@@ -17,25 +17,27 @@ public interface RobotMap {
   // following variables to use with your drivetrain subsystem.
   // Talon ports
   public static final int TALON_DT_RIGHT_FRONT_PORT = 3;
-  public static final int TALON_DT_LEFT_FRONT_PORT = 4;
+  public static final int TALON_DT_LEFT_FRONT_PORT = 4;//
   public static final int TALON_DT_RIGHT_BACK_PORT = 2;
-  public static final int TALON_DT_LEFT_BACK_PORT = 1;
+  public static final int TALON_DT_LEFT_BACK_PORT = 1;//
   public static final int TALON_ARM_PORT = 5;
   public static final int TALON_HAND_PORT = 6;
 
   // Neumatics
+  public static final int PCM_01 = 0;
+  public static final int PCM_02 = 9;
   public static final int COMPRESOR_MAIN_PORT = 0;
-  public static final int SELENOID_DOUBLE_WHEELS_FWD_PORT = 3;
-  public static final int SELENOID_DOUBLE_WHEELS_RVS_PORT = 2;
-  public static final int SELENOID_DOUBLE_ELEVATE_FWD_PORT = 0;
-  public static final int SELENOID_DOUBLE_ELEVATE_RVS_PORT = 1;
-  public static final int SELENOID_DOUBLE_HAND_FWD_PORT = 8;
-  public static final int SELENOID_DOUBLE_HAND_RVS_PORT = 9;
+  public static final int SELENOID_DOUBLE_WHEELS_FWD_PORT = 2;
+  public static final int SELENOID_DOUBLE_WHEELS_RVS_PORT = 3;
+  public static final int SELENOID_DOUBLE_ELEVATE_FWD_PORT = 4;
+  public static final int SELENOID_DOUBLE_ELEVATE_RVS_PORT = 5;
+  public static final int SELENOID_DOUBLE_HAND_FWD_PORT = 6;
+  public static final int SELENOID_DOUBLE_HAND_RVS_PORT = 7;
   public static final int SELENOID_DOUBLE_HELPER_FWD_PORT = 4;
   public static final int SELENOID_DOUBLE_HELPER_RVS_PORT = 5;
-  public static final int SELENOID_DOUBLE_GEAR_FWD_PORT = 6;// 2
-  public static final int SELENOID_DOUBLE_GEAR_RVS_PORT = 7;// 3
-  public static final int SELENOID_SINGLE_PUSHER_PORT = 10;
+  public static final int SELENOID_DOUBLE_GEAR_FWD_PORT = 0;// 2
+  public static final int SELENOID_DOUBLE_GEAR_RVS_PORT = 1;// 3
+  public static final int SELENOID_SINGLE_PUSHER_PORT = 2;
 
   // Analog devices
   public static final int LIMIT_SWITCH_ARM_PORT = 3;
