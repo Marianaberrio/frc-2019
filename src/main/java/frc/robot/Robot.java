@@ -11,7 +11,10 @@ import java.util.Calendar;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -32,6 +35,7 @@ public class Robot extends TimedRobot implements RobotMap {
   private boolean handToggle = false;
   private boolean shotBallToggle = false;
   private boolean compresorToggle = false;
+  private Ultrasonic ultrasonicSonar;
 
   private static final double MAX_VELOCITY = 0.5;
 
@@ -39,6 +43,10 @@ public class Robot extends TimedRobot implements RobotMap {
   public void robotInit() {
     oi = OI.getInstace();
     oi.initSetup();
+    // DigitalInput input = new DigitalInput(2);
+    // DigitalOutput output = new DigitalOutput(2);
+    // ultrasonicSonar = new Ultrasonic(output, input);
+    // ultrasonicSonar.setAutomaticMode(true);
   }
 
   @Override
@@ -61,6 +69,7 @@ public class Robot extends TimedRobot implements RobotMap {
     smoothDrive(velocity * (-1), rotation);
     SmartDashboard.putNumber("upArmVelocity ", upArmVelocity);
     SmartDashboard.putNumber("downArmVelocity ", downArmVelocity);
+    // SmartDashboard.putNumber("RangeInces ", ultrasonicSonar.getRangeInches());
 
     long time2 = Calendar.getInstance().getTimeInMillis();
     double delta = (time2 - time1) / 1000.0;
@@ -96,13 +105,13 @@ public class Robot extends TimedRobot implements RobotMap {
     }
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
-      moveHand(-0.5);
+      moveHand(-0.7);
     } else if ((oi.driverJoystick.getRawButtonReleased(BTN_R1_AXIS))) {
       moveHand(0.0);
     }
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
-      moveHand(0.5);
+      moveHand(0.7);
     } else if (oi.driverJoystick.getRawButtonReleased(BTN_L1_AXIS)) {
       moveHand(0.0);
     }
