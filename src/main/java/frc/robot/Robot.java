@@ -34,17 +34,19 @@ public class Robot extends TimedRobot implements RobotMap {
 
   private static final double MAX_VELOCITY = 0.5;
 
+  private static final double MAX_VELOCITY_ARM = 0.3;
+
   @Override
   public void robotInit() {
     oi = OI.getInstace();
     oi.initSetup();
     drive = new DifferentialDrive(oi.leftFrontTalon, oi.rightFrontTalon);
-    setInitialPosition();
     robotTimer = new Timer();
   }
 
   @Override
   public void teleopInit() {
+    // setInitialPosition();
   }
 
   @Override
@@ -64,13 +66,13 @@ public class Robot extends TimedRobot implements RobotMap {
   public void teleopPeriodic() {
     double velocity = oi.driverJoystick.getRawAxis(1) * 0.7;
     double rotation = oi.driverJoystick.getRawAxis(4) * 0.7;
-    double upArmVelocity = oi.driverJoystick.getRawAxis(2) * MAX_VELOCITY;
+    double upArmVelocity = oi.driverJoystick.getRawAxis(2) * MAX_VELOCITY_ARM;
     double downArmVelocity = oi.driverJoystick.getRawAxis(3) * MAX_VELOCITY;
     double armVelocity = 0;
     smoothDrive(velocity * (-1), rotation);
     SmartDashboard.putNumber("upArmVelocity ", upArmVelocity);
     SmartDashboard.putNumber("downArmVelocity ", downArmVelocity);
-    // SmartDashboard.putNumber("RangeInces ", ultrasonicSonar.getRangeInches());
+    SmartDashboard.putBoolean("LimitSwitchActice", oi.limitSwitch.get());
 
     long time2 = Calendar.getInstance().getTimeInMillis();
     double delta = (time2 - time1) / 1000.0;
@@ -86,7 +88,7 @@ public class Robot extends TimedRobot implements RobotMap {
     SmartDashboard.putNumber("Distance ", distance);
     SmartDashboard.putNumber("Raw value ", raw);
     SmartDashboard.putNumber("Rater ", rate);
-    SmartDashboard.putBoolean("PID ", pidEnabled);
+    SmartDashboard.putBoolean("ArmControllerEnabled ", pidEnabled);
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
       resetArmEncoder();
@@ -116,7 +118,7 @@ public class Robot extends TimedRobot implements RobotMap {
       moveHand(0.0);
     }
 
-    if (upArmVelocity > 0d && (count > 20 || pidEnabled)) {
+    if (upArmVelocity > 0d && (count > 15 || pidEnabled)) {
       moveArm(-upArmVelocity);
       armVelocity = -upArmVelocity;
     } else if (downArmVelocity > 0 && (count < 603 || pidEnabled)) {
@@ -135,6 +137,11 @@ public class Robot extends TimedRobot implements RobotMap {
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
       shotBall();
+    }
+
+    if ((oi.limitSwitch.get() && upArmVelocity > 0d)) {
+      moveArm(0.0);
+      resetArmEncoder();
     }
   }
 
