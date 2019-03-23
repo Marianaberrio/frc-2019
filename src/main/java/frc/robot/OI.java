@@ -10,6 +10,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
@@ -29,6 +30,7 @@ public class OI implements RobotMap {
   public DoubleSolenoid hanSolenoid, shooterSolenoid;
   public Compressor mainCompressor;
   public Encoder armEncoder;
+  public DigitalInput limitSwitch;
 
   public static OI getInstace() {
     if (_io == null)
@@ -51,6 +53,7 @@ public class OI implements RobotMap {
     shooterSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_PUSHER_FWD_PORT, SELENOID_DOUBLE_PUSHER_RVS_PORT);
 
     armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
+    limitSwitch = new DigitalInput(3);
   }
 
   public void initSetup() {
