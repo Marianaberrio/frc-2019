@@ -10,13 +10,19 @@ package frc.robot;
 import java.util.Calendar;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+//import com.sun.tools.javadoc.main.Start;
 
+import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -36,6 +42,8 @@ public class Robot extends TimedRobot implements RobotMap {
   private boolean shotBallToggle = false;
   private boolean compresorToggle = false;
   private Ultrasonic ultrasonicSonar;
+  private Timer myTimer;
+  private Gyro gyro;
 
   private static final double MAX_VELOCITY = 0.5;
 
@@ -43,6 +51,9 @@ public class Robot extends TimedRobot implements RobotMap {
   public void robotInit() {
     oi = OI.getInstace();
     oi.initSetup();
+    drive = new DifferentialDrive(oi.leftFrontTalon, oi.rightFrontTalon);
+    gyro = new AnalogGyro(1);
+    gyro.calibrate();
     // DigitalInput input = new DigitalInput(2);
     // DigitalOutput output = new DigitalOutput(2);
     // ultrasonicSonar = new Ultrasonic(output, input);
@@ -51,12 +62,18 @@ public class Robot extends TimedRobot implements RobotMap {
 
   @Override
   public void teleopInit() {
-    drive = new DifferentialDrive(oi.leftFrontTalon, oi.rightFrontTalon);
-
     eK = 0;
     Ki = 0.005;
     Kp = 0.025;
     setPoint = 0.0001;
+    gyro.reset();
+  }
+
+  @Override
+  public void autonomousInit() {
+    myTimer = new Timer();
+    myTimer.reset();
+    myTimer.start();
   }
 
   @Override
@@ -86,6 +103,7 @@ public class Robot extends TimedRobot implements RobotMap {
     SmartDashboard.putNumber("Raw value ", raw);
     SmartDashboard.putNumber("Rater ", rate);
     SmartDashboard.putBoolean("PID ", pidEnabled);
+    SmartDashboard.putNumber("Angle", gyro.getAngle());
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
       oi.armEncoder.reset();
@@ -135,6 +153,13 @@ public class Robot extends TimedRobot implements RobotMap {
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
       shotBall();
+    }
+  }
+
+  @Override
+  public void autonomousPeriodic() {
+    while (myTimer.get() < 3.0) {
+      smoothDrive(0.6, 0.0);
     }
   }
 
