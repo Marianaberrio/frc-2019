@@ -29,7 +29,7 @@ public class OI implements RobotMap {
   public WPI_TalonSRX armTalon, handTalon;
   public DoubleSolenoid hanSolenoid, shooterSolenoid;
   public Compressor mainCompressor;
-  public Encoder armEncoder;
+  public Encoder armEncoder, leftEncoder, rightEncoder;
   public DigitalInput limitSwitch;
 
   public static OI getInstace() {
@@ -53,6 +53,8 @@ public class OI implements RobotMap {
     shooterSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_PUSHER_FWD_PORT, SELENOID_DOUBLE_PUSHER_RVS_PORT);
 
     armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
+    leftEncoder = new Encoder(ENCODER_LEFT_CHANNEL_A, ENCODER_LEFT_CHANNEL_B, false, Encoder.EncodingType.k4X);
+    rightEncoder = new Encoder(ENCODER_RIGHT_CHANNEL_A, ENCODER_RIGHT_CHANNEL_B, true, Encoder.EncodingType.k4X);
     limitSwitch = new DigitalInput(3);
   }
 
@@ -80,6 +82,8 @@ public class OI implements RobotMap {
 
   public void initEncoders() {
     initArmEncoder();
+    initLeftWheelEncoder();
+    initRightWheelEncoder();
   }
 
   public void initArmEncoder() {
@@ -90,5 +94,23 @@ public class OI implements RobotMap {
     armEncoder.setSamplesToAverage(7);
 
     armEncoder.reset();
+  }
+  public void initLeftWheelEncoder() {
+    leftEncoder.setMaxPeriod(0.1);
+    leftEncoder.setMinRate(10);
+    leftEncoder.setDistancePerPulse((Math.PI * (8.0 / 12.0)) / 7.0);
+    leftEncoder.setReverseDirection(false);
+    leftEncoder.setSamplesToAverage(7);
+
+    leftEncoder.reset();
+  }
+  public void initRightWheelEncoder() {
+    rightEncoder.setMaxPeriod(0.1);
+    rightEncoder.setMinRate(10);
+    rightEncoder.setDistancePerPulse((Math.PI * (8.0 / 12.0)) / 7.0);
+    rightEncoder.setReverseDirection(false);
+    rightEncoder.setSamplesToAverage(7);
+
+    rightEncoder.reset();
   }
 }

@@ -35,6 +35,10 @@ public interface RobotMap {
   // Encoders
   public static final int ENCODER_ARM_CHANNEL_A = 0;
   public static final int ENCODER_ARM_CHANNEL_B = 1;
+  public static final int ENCODER_RIGHT_CHANNEL_A = 5;
+  public static final int ENCODER_RIGHT_CHANNEL_B = 6;
+  public static final int ENCODER_LEFT_CHANNEL_A = 7;
+  public static final int ENCODER_LEFT_CHANNEL_B = 8;
 
   // Joysticks
   public static final int JOYSTICK_MAIN_PORT = 0;

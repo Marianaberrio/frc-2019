@@ -11,6 +11,14 @@ import java.util.Calendar;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
+import edu.wpi.cscore.CvSink;
+import edu.wpi.cscore.CvSource;
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
@@ -25,8 +33,8 @@ public class Robot extends TimedRobot implements RobotMap {
   private static OI oi;
 
   private DifferentialDrive drive;
+  private AnalogInput frontSonar;
 
-  private long time1;
   private boolean asistanceEnabled = false;
   private boolean handToggle = false;
   private boolean compresorToggle = false;
@@ -58,12 +66,29 @@ public class Robot extends TimedRobot implements RobotMap {
     oi = OI.getInstace();
     oi.initSetup();
     drive = new DifferentialDrive(oi.leftFrontTalon, oi.rightFrontTalon);
+    frontSonar = new AnalogInput(4);
     robotTimer = new Timer();
+    new Thread(() -> {
+      UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
+      camera.setResolution(640, 480);
+      
+      CvSink cvSink = CameraServer.getInstance().getVideo();
+      CvSource outputStream = CameraServer.getInstance().putVideo("Blur", 640, 480);
+      
+      Mat source = new Mat();
+      Mat output = new Mat();
+      
+      while(!Thread.interrupted()) {
+          cvSink.grabFrame(source);
+          Imgproc.cvtColor(source, output, Imgproc.COLOR_BGR2GRAY);
+          outputStream.putFrame(output);
+      }
+  }).start();
   }
 
   @Override
   public void teleopInit() {
-    setInitialPosition();
+    // setInitialPosition();
     robotTimer.reset();
     robotTimer.start();
   }
@@ -93,15 +118,23 @@ public class Robot extends TimedRobot implements RobotMap {
     SmartDashboard.putBoolean("LimitSwitchActice", oi.limitSwitch.get());
 
     armEncoderCount = oi.armEncoder.get();
-    double raw = oi.armEncoder.getRaw();
-    double distance = oi.armEncoder.getDistance();
-    double rate = oi.armEncoder.getRate();
 
-    SmartDashboard.putNumber("count ", armEncoderCount);
-    SmartDashboard.putNumber("Distance ", distance);
-    SmartDashboard.putNumber("Raw value ", raw);
-    SmartDashboard.putNumber("Rater ", rate);
+    SmartDashboard.putNumber("count ", oi.armEncoder.get());
+    SmartDashboard.putNumber("Distance ", oi.armEncoder.getDistance());
     SmartDashboard.putBoolean("ArmControllerEnabled ", asistanceEnabled);
+
+    SmartDashboard.putNumber("count Right ", oi.rightEncoder.get());
+    SmartDashboard.putNumber("Distance Right ", oi.rightEncoder.getDistance());
+
+    SmartDashboard.putNumber("count Left ", oi.leftEncoder.get());
+    SmartDashboard.putNumber("Distance Left ", oi.leftEncoder.getDistance());
+
+    // SmartDashboard.putNumber("Sonar volts ", frontSonar.getVoltage());
+    // SmartDashboard.putNumber("Sonar avg Volt ", frontSonar.getAverageVoltage());
+    // SmartDashboard.putNumber("Raw avg sonar ", frontSonar.getAverageValue());
+    // SmartDashboard.putNumber("Raw value sonar ", frontSonar.getValue());
+    // SmartDashboard.putNumber("distance in cm", (frontSonar.getAverageVoltage()/1024d));
+    // SmartDashboard.putNumber("distance Inches ", getDistanceSonar());
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
       resetArmEncoder();
@@ -288,10 +321,6 @@ public class Robot extends TimedRobot implements RobotMap {
       while (armEncoderCount > count) {
         armEncoderCount = oi.armEncoder.get();
         moveArm(-0.4);
-        // if (movementTimout.get() > 0.5 && lastCounter == armEncoderCount) {
-        // setArmToPosition(lastCounter + 5);
-        // break;
-        // }
         lastCounter = armEncoderCount;
       }
     }
@@ -314,4 +343,11 @@ public class Robot extends TimedRobot implements RobotMap {
     setArmToPosition(currentLevel - (15 + additionalFactor));
   }
 
+  private double getDistanceSonar(){
+    double valueToInches_2 = 1 / 20.5;// 14.45
+    double distanceX = frontSonar.getAverageValue();
+    double distance = (distanceX - 237) * valueToInches_2 + 12;
+    int distanceInt=(int) distance;
+    return distanceInt;
+  }
 }
