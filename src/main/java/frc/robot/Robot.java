@@ -33,6 +33,7 @@ public class Robot extends TimedRobot implements RobotMap {
   private boolean isDiskLevelEnable = false;
   private Timer robotTimer;
   private int armEncoderCount;
+  private int currentLevel;
 
   private static final double MAX_VELOCITY = 0.5;
   private static final double MAX_VELOCITY_ARM = 0.3;
@@ -62,14 +63,14 @@ public class Robot extends TimedRobot implements RobotMap {
 
   @Override
   public void teleopInit() {
-    // setInitialPosition();
+    setInitialPosition();
     robotTimer.reset();
     robotTimer.start();
   }
 
   @Override
   public void autonomousInit() {
-    // setInitialPosition();
+    setInitialPosition();
     robotTimer.reset();
     robotTimer.start();
   }
@@ -159,8 +160,19 @@ public class Robot extends TimedRobot implements RobotMap {
       }
       setArmBallToLevel(LEVEL_0);
     }
+    // take the disk from the cargo
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
+      grabDisk();
+    }
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_START_AXIS)) {
+      putDisk();
+    }
+
     if (oi.asistantJoystick.getRawButtonPressed(BTN_A_AXIS)) {
       isDiskLevelEnable = !isDiskLevelEnable;
+      if (!isDiskLevelEnable)
+        oi.hanSolenoid.set(Value.kForward);
+
     }
     SmartDashboard.putString("LevelActivated", isDiskLevelEnable ? "Disk" : "Ball");
     if (oi.asistantJoystick.getRawButtonPressed(BTN_X_AXIS)) {
@@ -175,6 +187,8 @@ public class Robot extends TimedRobot implements RobotMap {
 
     if ((oi.limitSwitch.get() && upArmVelocity > 0d)) {
       moveArm(0.0);
+      resetArmEncoder();
+    } else if (oi.limitSwitch.get()) {
       resetArmEncoder();
     }
   }
@@ -196,9 +210,6 @@ public class Robot extends TimedRobot implements RobotMap {
     } else {
       oi.hanSolenoid.set(Value.kReverse);
     }
-  }
-
-  private void toogleBallMotor() {
   }
 
   private void smoothDrive(double velocity, double rotation) {
@@ -255,6 +266,7 @@ public class Robot extends TimedRobot implements RobotMap {
     default:
       count = 10;
     }
+    currentLevel = count;
     setArmToPosition(count);
   }
 
@@ -283,6 +295,23 @@ public class Robot extends TimedRobot implements RobotMap {
         lastCounter = armEncoderCount;
       }
     }
+  }
+
+  private void grabDisk() {
+    setArmToPosition(currentLevel + 15);
+    oi.hanSolenoid.set(Value.kForward);
+  }
+
+  private void putDisk() {
+    int additionalFactor;
+    if (currentLevel > 500)
+      additionalFactor = 5;
+    else if (currentLevel > 200)
+      additionalFactor = 3;
+    else
+      additionalFactor = 1;
+    oi.hanSolenoid.set(Value.kReverse);
+    setArmToPosition(currentLevel - (15 + additionalFactor));
   }
 
 }
