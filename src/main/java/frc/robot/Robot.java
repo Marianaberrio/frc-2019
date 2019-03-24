@@ -27,14 +27,30 @@ public class Robot extends TimedRobot implements RobotMap {
   private DifferentialDrive drive;
 
   private long time1;
-  private boolean pidEnabled = false;
+  private boolean asistanceEnabled = false;
   private boolean handToggle = false;
   private boolean compresorToggle = false;
+  private boolean isDiskLevelEnable = false;
   private Timer robotTimer;
+  private int armEncoderCount;
 
   private static final double MAX_VELOCITY = 0.5;
-
   private static final double MAX_VELOCITY_ARM = 0.3;
+
+  private static final int grabLevelBall = 5;
+  private static final int firstLevelBall = 202;
+  private static final int secondLevelBall = 455;
+  private static final int thirdLevelBall = 604;
+
+  private static final int grabLevelDisk = 20;
+  private static final int firstLevelDisk = 47;
+  private static final int secondLevelDisk = 290;
+  private static final int thirdLevelDisk = 565;
+
+  private static final int LEVEL_0 = 0;
+  private static final int LEVEL_1 = 1;
+  private static final int LEVEL_2 = 2;
+  private static final int LEVEL_3 = 3;
 
   @Override
   public void robotInit() {
@@ -47,10 +63,13 @@ public class Robot extends TimedRobot implements RobotMap {
   @Override
   public void teleopInit() {
     // setInitialPosition();
+    robotTimer.reset();
+    robotTimer.start();
   }
 
   @Override
   public void autonomousInit() {
+    // setInitialPosition();
     robotTimer.reset();
     robotTimer.start();
   }
@@ -70,25 +89,18 @@ public class Robot extends TimedRobot implements RobotMap {
     double downArmVelocity = oi.driverJoystick.getRawAxis(3) * MAX_VELOCITY;
     double armVelocity = 0;
     smoothDrive(velocity * (-1), rotation);
-    SmartDashboard.putNumber("upArmVelocity ", upArmVelocity);
-    SmartDashboard.putNumber("downArmVelocity ", downArmVelocity);
     SmartDashboard.putBoolean("LimitSwitchActice", oi.limitSwitch.get());
 
-    long time2 = Calendar.getInstance().getTimeInMillis();
-    double delta = (time2 - time1) / 1000.0;
-    time1 = time2;
-    double v = 0;
-
-    int count = oi.armEncoder.get();
+    armEncoderCount = oi.armEncoder.get();
     double raw = oi.armEncoder.getRaw();
     double distance = oi.armEncoder.getDistance();
     double rate = oi.armEncoder.getRate();
 
-    SmartDashboard.putNumber("count ", count);
+    SmartDashboard.putNumber("count ", armEncoderCount);
     SmartDashboard.putNumber("Distance ", distance);
     SmartDashboard.putNumber("Raw value ", raw);
     SmartDashboard.putNumber("Rater ", rate);
-    SmartDashboard.putBoolean("ArmControllerEnabled ", pidEnabled);
+    SmartDashboard.putBoolean("ArmControllerEnabled ", asistanceEnabled);
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
       resetArmEncoder();
@@ -101,27 +113,28 @@ public class Robot extends TimedRobot implements RobotMap {
       else
         oi.stopCompressor();
     }
+    SmartDashboard.putBoolean("LimitSwitchActice", oi.limitSwitch.get());
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_START_AXIS)) {
-      initPIDValues();
+      asistanceEnabled = !asistanceEnabled;
     }
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
-      moveHand(-0.7);
+      moveHand(0.7);
     } else if ((oi.driverJoystick.getRawButtonReleased(BTN_R1_AXIS))) {
       moveHand(0.0);
     }
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
-      moveHand(0.7);
-    } else if (oi.driverJoystick.getRawButtonReleased(BTN_L1_AXIS)) {
       moveHand(0.0);
+    } else if ((oi.driverJoystick.getRawButtonReleased(BTN_L1_AXIS))) {
+      moveHand(-0.7);
     }
 
-    if (upArmVelocity > 0d && (count > 15 || pidEnabled)) {
+    if (upArmVelocity > 0d && (armEncoderCount > 15 || asistanceEnabled)) {
       moveArm(-upArmVelocity);
       armVelocity = -upArmVelocity;
-    } else if (downArmVelocity > 0 && (count < 603 || pidEnabled)) {
+    } else if (downArmVelocity > 0 && (armEncoderCount < 603 || asistanceEnabled)) {
       moveArm(downArmVelocity);
       armVelocity = downArmVelocity;
     } else {
@@ -135,8 +148,29 @@ public class Robot extends TimedRobot implements RobotMap {
       toogleHand();
     }
 
+    // Set level of the arm base on the X btn and the values
     if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
-      shotBall();
+      if (isDiskLevelEnable) {
+        oi.hanSolenoid.set(Value.kReverse);
+        moveHand(0.0);
+      } else {
+        oi.hanSolenoid.set(Value.kForward);
+        moveHand(-0.7);
+      }
+      setArmBallToLevel(LEVEL_0);
+    }
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_A_AXIS)) {
+      isDiskLevelEnable = !isDiskLevelEnable;
+    }
+    SmartDashboard.putString("LevelActivated", isDiskLevelEnable ? "Disk" : "Ball");
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_X_AXIS)) {
+      setArmBallToLevel(LEVEL_1);
+    }
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_Y_AXIS)) {
+      setArmBallToLevel(LEVEL_2);
+    }
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_B_AXIS)) {
+      setArmBallToLevel(LEVEL_3);
     }
 
     if ((oi.limitSwitch.get() && upArmVelocity > 0d)) {
@@ -155,10 +189,6 @@ public class Robot extends TimedRobot implements RobotMap {
     SmartDashboard.putNumber("HAND_direction ", direction);
   }
 
-  private void initPIDValues() {
-    pidEnabled = !pidEnabled;
-  }
-
   private void toogleHand() {
     handToggle = !handToggle;
     if (handToggle) {
@@ -168,12 +198,7 @@ public class Robot extends TimedRobot implements RobotMap {
     }
   }
 
-  private void shotBall() {
-    if (oi.shooterSolenoid.get() == Value.kForward) {
-      oi.shooterSolenoid.set(Value.kReverse);
-    } else {
-      oi.shooterSolenoid.set(Value.kForward);
-    }
+  private void toogleBallMotor() {
   }
 
   private void smoothDrive(double velocity, double rotation) {
@@ -205,6 +230,58 @@ public class Robot extends TimedRobot implements RobotMap {
     }
     if (oi.limitSwitch.get()) {
       resetArmEncoder();
+    }
+  }
+
+  private void setArmBallToLevel(int level) {
+    int count;
+    switch (level) {
+    case LEVEL_0: {
+      count = isDiskLevelEnable ? grabLevelDisk : grabLevelBall;
+      break;
+    }
+    case LEVEL_1: {
+      count = isDiskLevelEnable ? firstLevelDisk : firstLevelBall;
+      break;
+    }
+    case LEVEL_2: {
+      count = isDiskLevelEnable ? secondLevelDisk : secondLevelBall;
+      break;
+    }
+    case LEVEL_3: {
+      count = isDiskLevelEnable ? thirdLevelDisk : thirdLevelBall;
+      break;
+    }
+    default:
+      count = 10;
+    }
+    setArmToPosition(count);
+  }
+
+  private void setArmToPosition(int count) {
+    int lastCounter = 0;
+    Timer movementTimout = new Timer();
+    movementTimout.start();
+    if (armEncoderCount < count) {
+      while (armEncoderCount < count) {
+        armEncoderCount = oi.armEncoder.get();
+        moveArm(0.5);
+        // if (movementTimout.get() > 2.0 && lastCounter == armEncoderCount) {
+        // setArmToPosition(lastCounter - 5);
+        // break;
+        // }
+        lastCounter = armEncoderCount;
+      }
+    } else {
+      while (armEncoderCount > count) {
+        armEncoderCount = oi.armEncoder.get();
+        moveArm(-0.4);
+        // if (movementTimout.get() > 0.5 && lastCounter == armEncoderCount) {
+        // setArmToPosition(lastCounter + 5);
+        // break;
+        // }
+        lastCounter = armEncoderCount;
+      }
     }
   }
 

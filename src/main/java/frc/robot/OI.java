@@ -24,7 +24,7 @@ public class OI implements RobotMap {
   private static OI _io;
   // joystick.
   public Joystick driverJoystick = new Joystick(JOYSTICK_MAIN_PORT);
-  // public Joystick asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
+  public Joystick asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
   public WPI_TalonSRX leftFrontTalon, rightFrontTalon;
   public WPI_TalonSRX armTalon, handTalon;
   public DoubleSolenoid hanSolenoid, shooterSolenoid;
@@ -46,7 +46,7 @@ public class OI implements RobotMap {
     handTalon = new WPI_TalonSRX(TALON_HAND_PORT);
 
     driverJoystick = new Joystick(JOYSTICK_MAIN_PORT);
-    // asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
+    asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
 
     mainCompressor = new Compressor();
     hanSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_HAND_FWD_PORT, SELENOID_DOUBLE_HAND_RVS_PORT);
