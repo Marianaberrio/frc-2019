@@ -54,7 +54,7 @@ public class OI implements RobotMap {
 
     armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
     leftEncoder = new Encoder(ENCODER_LEFT_CHANNEL_A, ENCODER_LEFT_CHANNEL_B, false, Encoder.EncodingType.k4X);
-    rightEncoder = new Encoder(ENCODER_RIGHT_CHANNEL_A, ENCODER_RIGHT_CHANNEL_B, true, Encoder.EncodingType.k4X);
+    rightEncoder = new Encoder(ENCODER_RIGHT_CHANNEL_B, ENCODER_RIGHT_CHANNEL_A, true, Encoder.EncodingType.k4X);
     limitSwitch = new DigitalInput(3);
   }
 

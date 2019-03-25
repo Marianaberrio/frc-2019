@@ -7,8 +7,6 @@
 
 package frc.robot;
 
-import java.util.Calendar;
-
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
 import org.opencv.core.Mat;
@@ -21,7 +19,6 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -67,6 +64,8 @@ public class Robot extends TimedRobot implements RobotMap {
     oi.initSetup();
     drive = new DifferentialDrive(oi.leftFrontTalon, oi.rightFrontTalon);
     frontSonar = new AnalogInput(4);
+    frontSonar.setAccumulatorInitialValue(0);
+
     robotTimer = new Timer();
     new Thread(() -> {
       UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
@@ -88,7 +87,7 @@ public class Robot extends TimedRobot implements RobotMap {
 
   @Override
   public void teleopInit() {
-    // setInitialPosition();
+    setInitialPosition();
     robotTimer.reset();
     robotTimer.start();
   }
@@ -129,12 +128,12 @@ public class Robot extends TimedRobot implements RobotMap {
     SmartDashboard.putNumber("count Left ", oi.leftEncoder.get());
     SmartDashboard.putNumber("Distance Left ", oi.leftEncoder.getDistance());
 
-    // SmartDashboard.putNumber("Sonar volts ", frontSonar.getVoltage());
-    // SmartDashboard.putNumber("Sonar avg Volt ", frontSonar.getAverageVoltage());
-    // SmartDashboard.putNumber("Raw avg sonar ", frontSonar.getAverageValue());
-    // SmartDashboard.putNumber("Raw value sonar ", frontSonar.getValue());
+    SmartDashboard.putNumber("Sonar volts ", frontSonar.getVoltage());
+    SmartDashboard.putNumber("Sonar avg Volt ", frontSonar.getAverageVoltage());
+    SmartDashboard.putNumber("Raw avg sonar ", frontSonar.getAverageValue());
+    SmartDashboard.putNumber("Raw value sonar ", frontSonar.getValue());
     // SmartDashboard.putNumber("distance in cm", (frontSonar.getAverageVoltage()/1024d));
-    // SmartDashboard.putNumber("distance Inches ", getDistanceSonar());
+    SmartDashboard.putNumber("distance Inches ", getDistanceSonar());
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
       resetArmEncoder();
@@ -304,7 +303,7 @@ public class Robot extends TimedRobot implements RobotMap {
   }
 
   private void setArmToPosition(int count) {
-    int lastCounter = 0;
+    // int lastCounter = 0;
     Timer movementTimout = new Timer();
     movementTimout.start();
     if (armEncoderCount < count) {
@@ -315,13 +314,13 @@ public class Robot extends TimedRobot implements RobotMap {
         // setArmToPosition(lastCounter - 5);
         // break;
         // }
-        lastCounter = armEncoderCount;
+        // lastCounter = armEncoderCount;
       }
     } else {
       while (armEncoderCount > count) {
         armEncoderCount = oi.armEncoder.get();
         moveArm(-0.4);
-        lastCounter = armEncoderCount;
+        // lastCounter = armEncoderCount;
       }
     }
   }
