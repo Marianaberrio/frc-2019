@@ -19,9 +19,11 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.sensor.UltrasonicSensor;
 
 /**
  * TEAM FORCE 4707 PRACTICE ROBOT
@@ -63,7 +65,7 @@ public class Robot extends TimedRobot implements RobotMap {
     oi = OI.getInstace();
     oi.initSetup();
     drive = new DifferentialDrive(oi.leftFrontTalon, oi.rightFrontTalon);
-    frontSonar = new AnalogInput(4);
+    frontSonar = new AnalogInput(0);
     frontSonar.setAccumulatorInitialValue(0);
 
     robotTimer = new Timer();
@@ -128,11 +130,6 @@ public class Robot extends TimedRobot implements RobotMap {
     SmartDashboard.putNumber("count Left ", oi.leftEncoder.get());
     SmartDashboard.putNumber("Distance Left ", oi.leftEncoder.getDistance());
 
-    SmartDashboard.putNumber("Sonar volts ", frontSonar.getVoltage());
-    SmartDashboard.putNumber("Sonar avg Volt ", frontSonar.getAverageVoltage());
-    SmartDashboard.putNumber("Raw avg sonar ", frontSonar.getAverageValue());
-    SmartDashboard.putNumber("Raw value sonar ", frontSonar.getValue());
-    // SmartDashboard.putNumber("distance in cm", (frontSonar.getAverageVoltage()/1024d));
     SmartDashboard.putNumber("distance Inches ", getDistanceSonar());
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
