@@ -7,9 +7,9 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -30,9 +30,10 @@ public class IO implements RobotMap {
   public WPI_TalonSRX leftSlaveTalon, rightSlaveTalon;
   public WPI_TalonSRX armTalon, handTalon;
   public DigitalInput limitSwitchArm;
-  public DoubleSolenoid elevateRobotSolenoid, wheelSolenoid, balanceHelperSolenoid, gearChangeSolenoid;
+  public DoubleSolenoid elevateRobotSolenoid, raptorWheelSolenoid, hanSolenoid, changeGearSolenoid;
   public Compressor mainCompressor;
   public Encoder armEncoder, driveRightEncoder, driveLeftEncoder;
+  public AnalogInput frontSonar;
 
   public static IO getInstace() {
     if (_io == null)
@@ -53,11 +54,14 @@ public class IO implements RobotMap {
     asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
 
     limitSwitchArm = new DigitalInput(LIMIT_SWITCH_ARM_PORT);
+    frontSonar = new AnalogInput(0);
+    frontSonar.setAccumulatorInitialValue(ULTRASONIC_SONAR_PORT);
     mainCompressor = new Compressor(COMPRESOR_MAIN_PORT);
 
     elevateRobotSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_ELEVATE_FWD_PORT, SELENOID_DOUBLE_ELEVATE_RVS_PORT);
-    wheelSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_WHEELS_FWD_PORT, SELENOID_DOUBLE_WHEELS_RVS_PORT);
-    gearChangeSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_GEAR_FWD_PORT, SELENOID_DOUBLE_GEAR_RVS_PORT);
+    raptorWheelSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_WHEELS_FWD_PORT, SELENOID_DOUBLE_WHEELS_RVS_PORT);
+    changeGearSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_GEAR_FWD_PORT, SELENOID_DOUBLE_GEAR_RVS_PORT);
+    hanSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_HAND_FWD_PORT, SELENOID_DOUBLE_HAND_RVS_PORT);
 
     armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
     driveRightEncoder = new Encoder(ENCODER_DT_RIGHT_CHANNEL_A, ENCODER_DT_RIGHT_CHANNEL_B, false,
@@ -115,12 +119,7 @@ public class IO implements RobotMap {
     driveRightEncoder.reset();
   }
 
-  public void setSlaveTalonsDT() {
-    leftSlaveTalon.follow(leftFrontTalon);
-    rightSlaveTalon.follow(rightFrontTalon);
-    leftFrontTalon.setInverted(false);
-    rightFrontTalon.setInverted(true);
-    leftSlaveTalon.setInverted(InvertType.FollowMaster);
-    rightSlaveTalon.setInverted(InvertType.FollowMaster);
+  public void initAnalogInputs(){
+
   }
 }

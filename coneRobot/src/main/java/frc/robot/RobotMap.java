@@ -38,6 +38,7 @@ public interface RobotMap {
   public static final int SELENOID_SINGLE_PUSHER_PORT = 10;
 
   // Analog devices
+  public static final int ULTRASONIC_SONAR_PORT = 0;
   public static final int LIMIT_SWITCH_ARM_PORT = 3;
 
   // Encoders
