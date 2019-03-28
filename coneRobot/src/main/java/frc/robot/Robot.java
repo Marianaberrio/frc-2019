@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * TEAM FORCE 4707.
  */
 public class Robot extends TimedRobot implements RobotMap {
-  private static IO oi;
+  private static OI oi;
   private boolean elevateRobotToggle, wheelsUpToggle, balanceHelperToggle, gearChangeToggle;
 
   private SpeedControllerGroup speedControllerDriveRight;
@@ -38,7 +38,7 @@ public class Robot extends TimedRobot implements RobotMap {
 
   @Override
   public void robotInit() {
-    oi = IO.getInstace();
+    oi = OI.getInstace();
     oi.initTalons();
     oi.initNeumatics();
     oi.initEncoders();
