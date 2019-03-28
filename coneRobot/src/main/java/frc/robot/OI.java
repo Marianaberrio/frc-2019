@@ -7,20 +7,18 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Claw;
-import frc.robot.subsystems.Shooter;
 
 /**
  * This class is the glue that binds the controls on the physical operator
@@ -32,23 +30,19 @@ public class OI implements RobotMap {
   //// joystick.
   public Joystick driverJoystick = new Joystick(JOYSTICK_MAIN_PORT);
   public Joystick asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
+  public SpeedControllerGroup speedControllerDriveRight, speedControllerDriveLeft;
   public WPI_TalonSRX leftFrontTalon, rightFrontTalon;
   public WPI_TalonSRX leftSlaveTalon, rightSlaveTalon;
   public WPI_TalonSRX armTalon, handTalon;
   public DigitalInput limitSwitchArm;
-  public DoubleSolenoid elevateRobotSolenoid, wheelSolenoid, hanSolenoid;
-  public DoubleSolenoid balanceHelperSolenoid, gearChangeSolenoid;
-  public Solenoid shooterSolenoid;
+  public DoubleSolenoid elevateRobotSolenoid, raptorWheelSolenoid, hanSolenoid, changeGearSolenoid;
   public Compressor mainCompressor;
   public Encoder armEncoder, driveRightEncoder, driveLeftEncoder;
-  // Subsystems
+  public AnalogInput frontSonar;
+  public DifferentialDrive drive;
+  //subsystems
   public Claw hand;
   public Arm arm;
-  public Shooter shooter;
-  // Speed controller
-  public SpeedControllerGroup speedControllerDriveRight;
-  public SpeedControllerGroup speedControllerDriveLeft;
-  public DifferentialDrive drive;
 
   public static OI getInstace() {
     if (_io == null)
@@ -68,15 +62,15 @@ public class OI implements RobotMap {
     driverJoystick = new Joystick(JOYSTICK_MAIN_PORT);
     asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
 
-    // limitSwitchArm = new DigitalInput(LIMIT_SWITCH_ARM_PORT);
+    limitSwitchArm = new DigitalInput(LIMIT_SWITCH_ARM_PORT);
+    frontSonar = new AnalogInput(0);
+    frontSonar.setAccumulatorInitialValue(ULTRASONIC_SONAR_PORT);
     mainCompressor = new Compressor(COMPRESOR_MAIN_PORT);
 
-    elevateRobotSolenoid = new DoubleSolenoid(PCM_01, SELENOID_DOUBLE_ELEVATE_FWD_PORT,
-        SELENOID_DOUBLE_ELEVATE_RVS_PORT);
-    wheelSolenoid = new DoubleSolenoid(PCM_01, SELENOID_DOUBLE_WHEELS_FWD_PORT, SELENOID_DOUBLE_WHEELS_RVS_PORT);
-    gearChangeSolenoid = new DoubleSolenoid(PCM_01, SELENOID_DOUBLE_GEAR_FWD_PORT, SELENOID_DOUBLE_GEAR_RVS_PORT);
-    hanSolenoid = new DoubleSolenoid(PCM_01, SELENOID_DOUBLE_HAND_FWD_PORT, SELENOID_DOUBLE_HAND_RVS_PORT);
-    shooterSolenoid = new Solenoid(PCM_02, SELENOID_SINGLE_PUSHER_PORT);
+    elevateRobotSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_ELEVATE_FWD_PORT, SELENOID_DOUBLE_ELEVATE_RVS_PORT);
+    raptorWheelSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_WHEELS_FWD_PORT, SELENOID_DOUBLE_WHEELS_RVS_PORT);
+    changeGearSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_GEAR_FWD_PORT, SELENOID_DOUBLE_GEAR_RVS_PORT);
+    hanSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_HAND_FWD_PORT, SELENOID_DOUBLE_HAND_RVS_PORT);
 
     armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
     driveRightEncoder = new Encoder(ENCODER_DT_RIGHT_CHANNEL_A, ENCODER_DT_RIGHT_CHANNEL_B, false,
@@ -87,16 +81,15 @@ public class OI implements RobotMap {
 
   public void initSetup() {
     initTalons();
+    initDriveTrain();
     initEncoders();
     initNeumatics();
-    initDriveTrain();
     // initSubSystems();
   }
 
   public void initSubSystems() {
     hand = new Claw();
     arm = new Arm();
-    shooter = new Shooter();
   }
 
   public void initDriveTrain() {
@@ -154,12 +147,7 @@ public class OI implements RobotMap {
     driveRightEncoder.reset();
   }
 
-  public void setSlaveTalonsDT() {
-    leftSlaveTalon.follow(leftFrontTalon);
-    rightSlaveTalon.follow(rightFrontTalon);
-    leftFrontTalon.setInverted(false);
-    rightFrontTalon.setInverted(true);
-    leftSlaveTalon.setInverted(InvertType.FollowMaster);
-    rightSlaveTalon.setInverted(InvertType.FollowMaster);
+  public void initAnalogInputs(){
+
   }
 }

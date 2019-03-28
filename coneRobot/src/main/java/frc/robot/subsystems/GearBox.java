@@ -17,7 +17,7 @@ import frc.robot.OI;
  */
 public class GearBox extends Subsystem {
 
-  DoubleSolenoid gear = OI.getInstace().gearChangeSolenoid;
+  DoubleSolenoid gear = OI.getInstace().changeGearSolenoid;
 
   @Override
   public void initDefaultCommand() {
