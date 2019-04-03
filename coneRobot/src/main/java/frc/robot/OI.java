@@ -16,9 +16,11 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Claw;
+import com.ctre.phoenix.motorcontrol.ControlMode;
 
 /**
  * This class is the glue that binds the controls on the physical operator
@@ -40,7 +42,7 @@ public class OI implements RobotMap {
   public Encoder armEncoder, driveRightEncoder, driveLeftEncoder;
   public AnalogInput frontSonar;
   public DifferentialDrive drive;
-  //subsystems
+  // subsystems
   public Claw hand;
   public Arm arm;
 
@@ -84,6 +86,7 @@ public class OI implements RobotMap {
     initDriveTrain();
     initEncoders();
     initNeumatics();
+    //autonomousInit();
     // initSubSystems();
   }
 
@@ -147,7 +150,7 @@ public class OI implements RobotMap {
     driveRightEncoder.reset();
   }
 
-  public void initAnalogInputs(){
+  public void initAnalogInputs() {
 
   }
 }

@@ -9,32 +9,43 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
+import edu.wpi.cscore.CvSink;
+import edu.wpi.cscore.CvSource;
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.command.Scheduler;
+import edu.wpi.first.wpilibj.command.TimedCommand;
 
 /**
  * TEAM FORCE 4707.
  */
 public class Robot extends TimedRobot implements RobotMap {
   private static OI oi;
-  private boolean elevateRobotToggle, wheelsUpToggle, balanceHelperToggle, gearChangeToggle;
+  private boolean elevateRobotToggle, wheelsUpToggle, balanceHelperToggle, gearChangeToggle, asistantShotBallToggle,
+      asistantBallToggles;
 
   // private SpeedControllerGroup speedControllerDriveRight;
   // private SpeedControllerGroup speedControllerDriveLeft;
   // private DifferentialDrive drive;
 
-  private boolean isManualArmEnabled = false;
+  private boolean isManualArmEnabled = true;
   private boolean asistanceEnabled = false;
   private boolean handToggle = false;
   private boolean isDiskLevelEnable = false;
   private int armEncoderCount;
   private int currentLevel;
-  
-  private static final double MAX_VELOCITY = 0.8;
+  private Timer executionTImer;
+
+  private static final double MAX_VELOCITY = 1.0;
   private static final double MAX_VELOCITY_ARM = 0.3;
 
   private static final int grabLevelBall = 5;
@@ -51,116 +62,205 @@ public class Robot extends TimedRobot implements RobotMap {
   private static final int LEVEL_1 = 1;
   private static final int LEVEL_2 = 2;
   private static final int LEVEL_3 = 3;
-  
+
   @Override
   public void robotInit() {
     oi = OI.getInstace();
     oi.initTalons();
+    oi.initDriveTrain();
     oi.initNeumatics();
     oi.initEncoders();
+    new Thread(() -> {
+      UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
+      camera.setResolution(640, 480);
+
+      CvSink cvSink = CameraServer.getInstance().getVideo();
+      CvSource outputStream = CameraServer.getInstance().putVideo("Blur", 640, 480);
+
+      Mat source = new Mat();
+      Mat output = new Mat();
+
+      while (!Thread.interrupted()) {
+        cvSink.grabFrame(source);
+        Imgproc.cvtColor(source, output, Imgproc.COLOR_BGR2GRAY);
+        outputStream.putFrame(output);
+      }
+    }).start();
   }
 
   @Override
-  public void teleopInit() {
-    // speedControllerDriveRight = new SpeedControllerGroup(oi.rightFrontTalon, oi.rightSlaveTalon);
-    // speedControllerDriveLeft = new SpeedControllerGroup(oi.leftFrontTalon, oi.leftSlaveTalon);
-    // drive = new DifferentialDrive(speedControllerDriveLeft, speedControllerDriveRight);
-    setDriveWheels(true);
+  public void autonomousInit() {
+    executionTImer = new Timer();
+
+    executionTImer.reset();
+    executionTImer.start();
+
   }
 
   @Override
-  public void testPeriodic() {
-    super.testPeriodic();
-  }
-
-  @Override
-  public void teleopPeriodic() {
+  public void autonomousPeriodic() {
     double velocity = oi.driverJoystick.getRawAxis(1) * MAX_VELOCITY;
     double rotation = oi.driverJoystick.getRawAxis(4) * MAX_VELOCITY;
-    driveRobot(velocity, rotation);
+    driveRobot(-velocity, -rotation);
     double upArmVelocity = oi.driverJoystick.getRawAxis(2) * MAX_VELOCITY_ARM;
     double downArmVelocity = oi.driverJoystick.getRawAxis(3) * MAX_VELOCITY;
     double armVelocity = 0;
     boolean armLimitSwitchActivated = oi.limitSwitchArm.get();
     armEncoderCount = oi.armEncoder.get();
 
-    if (oi.driverJoystick.getRawButtonPressed(BTN_A_AXIS)) {
-      elevateRobot();
-    }
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_A_AXIS)) {
+    // elevateRobot();
+    // }
 
     if (oi.driverJoystick.getRawButtonPressed(BTN_B_AXIS)) {
       wheelsUp();
     }
 
-    if (oi.driverJoystick.getRawButtonPressed(BTN_Y_AXIS)){
+    if (oi.driverJoystick.getRawButtonPressed(BTN_Y_AXIS)) {
       changeGear();
     }
 
-    if (oi.driverJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
-      moveHand(0.7);
-    } else if ((oi.driverJoystick.getRawButtonReleased(BTN_R1_AXIS))) {
-      moveHand(0.0);
-    }
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_START_AXIS)) {
+    // isManualArmEnabled = !isManualArmEnabled;
+    // }
 
-    if (oi.driverJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
-      moveHand(0.0);
-    } else if ((oi.driverJoystick.getRawButtonReleased(BTN_L1_AXIS))) {
-      moveHand(-0.7);
-    }
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
+    // resetArmEncoder();
+    // }
 
-    if (upArmVelocity > 0d && (armEncoderCount > 15 || asistanceEnabled)) {
+    if (upArmVelocity > 0d && (armEncoderCount > 15 || isManualArmEnabled)) {
       moveArm(-upArmVelocity);
       armVelocity = -upArmVelocity;
-    } else if (downArmVelocity > 0 && (armEncoderCount < 603 || asistanceEnabled)) {
+    } else if (downArmVelocity > 0 && (armEncoderCount < 603 || isManualArmEnabled)) {
       moveArm(downArmVelocity);
       armVelocity = downArmVelocity;
     } else {
       armVelocity = 0d;
       moveArm(armVelocity);
     }
-    
+
     // Set level of the arm base on the X btn and the values
-    if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
-      if (isDiskLevelEnable) {
-        oi.hanSolenoid.set(Value.kReverse);
-        moveHand(0.0);
-      } else {
-        oi.hanSolenoid.set(Value.kForward);
-        moveHand(-0.7);
-      }
-      setArmBallToLevel(LEVEL_0);
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
+    // if (isDiskLevelEnable) {
+    // oi.hanSolenoid.set(Value.kReverse);
+    // moveHand(0.0);
+    // } else {
+    // oi.hanSolenoid.set(Value.kForward);
+    // moveHand(-0.9);
+    // }
+    // setArmBallToLevel(LEVEL_0);
+    // }
+
+    if (oi.driverJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
+      togglePickBall();
     }
-    //ASSISTANCE CONTROLS Assistance controls
+
+    if (oi.driverJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
+      toggleShotBall();
+    }
+
+    // ASSISTANCE CONTROLS Assistance controls
     // take the disk from the cargo
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
-      grabDisk();
+
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
+      oi.elevateRobotSolenoid.set(Value.kForward);
     }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_START_AXIS)) {
-      putDisk();
+
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
+      oi.elevateRobotSolenoid.set(Value.kReverse);
     }
 
     if (oi.asistantJoystick.getRawButtonPressed(BTN_A_AXIS)) {
-      isDiskLevelEnable = !isDiskLevelEnable;
-      if (!isDiskLevelEnable)
-        oi.hanSolenoid.set(Value.kForward);
+      toogleHand();
     }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_X_AXIS)) {
-      setArmBallToLevel(LEVEL_1);
-    }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_Y_AXIS)) {
-      setArmBallToLevel(LEVEL_2);
-    }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_B_AXIS)) {
-      setArmBallToLevel(LEVEL_3);
+  }
+
+  @Override
+  public void teleopInit() {
+    setDriveWheels(true);
+  }
+
+  @Override
+  public void teleopPeriodic() {
+    double velocity = oi.driverJoystick.getRawAxis(1) * MAX_VELOCITY;
+    double rotation = oi.driverJoystick.getRawAxis(4) * MAX_VELOCITY;
+    driveRobot(-velocity, -rotation);
+    double upArmVelocity = oi.driverJoystick.getRawAxis(2) * MAX_VELOCITY_ARM;
+    double downArmVelocity = oi.driverJoystick.getRawAxis(3) * MAX_VELOCITY;
+    double armVelocity = 0;
+    boolean armLimitSwitchActivated = oi.limitSwitchArm.get();
+    armEncoderCount = oi.armEncoder.get();
+
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_A_AXIS)) {
+    // elevateRobot();
+    // }
+
+    if (oi.driverJoystick.getRawButtonPressed(BTN_B_AXIS)) {
+      wheelsUp();
     }
 
-    SmartDashboard.putString("LevelActivated", isDiskLevelEnable ? "Disk" : "Ball");
-    SmartDashboard.putBoolean("LimitSwitch ", armLimitSwitchActivated);
-    SmartDashboard.putNumber("count ", armEncoderCount);
-    SmartDashboard.putBoolean("ARM Manual ", isManualArmEnabled);
-    SmartDashboard.putNumber("ARM Velocity ", oi.asistantJoystick.getRawAxis(1));
-    SmartDashboard.putNumber("distance Inches ", getDistanceSonar());
+    if (oi.driverJoystick.getRawButtonPressed(BTN_Y_AXIS)) {
+      changeGear();
+    }
+
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_START_AXIS)) {
+    // isManualArmEnabled = !isManualArmEnabled;
+    // }
+
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
+    // resetArmEncoder();
+    // }
+
+    if (upArmVelocity > 0d && (armEncoderCount > 15 || isManualArmEnabled)) {
+      moveArm(-upArmVelocity);
+      armVelocity = -upArmVelocity;
+    } else if (downArmVelocity > 0 && (armEncoderCount < 603 || isManualArmEnabled)) {
+      moveArm(downArmVelocity);
+      armVelocity = downArmVelocity;
+    } else {
+      armVelocity = 0d;
+      moveArm(armVelocity);
+    }
+
+    // Set level of the arm base on the X btn and the values
+    // if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
+    // if (isDiskLevelEnable) {
+    // oi.hanSolenoid.set(Value.kReverse);
+    // moveHand(0.0);
+    // } else {
+    // oi.hanSolenoid.set(Value.kForward);
+    // moveHand(-0.9);
+    // }
+    // setArmBallToLevel(LEVEL_0);
+    // }
+
+    if (oi.driverJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
+      togglePickBall();
+    }
+
+    if (oi.driverJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
+      toggleShotBall();
+    }
+
+    // ASSISTANCE CONTROLS Assistance controls
+    // take the disk from the cargo
+
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
+      oi.elevateRobotSolenoid.set(Value.kForward);
+    }
+
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
+      oi.elevateRobotSolenoid.set(Value.kReverse);
+    }
+
+    if (oi.asistantJoystick.getRawButtonPressed(BTN_A_AXIS)) {
+      toogleHand();
+    }
   }
+
+  // if (oi.asistantJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
+  // grabDisk();
+  // }
 
   private void elevateRobot() {
     elevateRobotToggle = !elevateRobotToggle;
@@ -168,6 +268,24 @@ public class Robot extends TimedRobot implements RobotMap {
       oi.elevateRobotSolenoid.set(Value.kForward);
     else
       oi.elevateRobotSolenoid.set(Value.kReverse);
+  }
+
+  private void toggleShotBall() {
+    asistantBallToggles = !asistantBallToggles;
+    if (asistantBallToggles) {
+      moveHand(-0.9);
+    } else {
+      moveHand(0.0);
+    }
+  }
+
+  private void togglePickBall() {
+    asistantShotBallToggle = !asistantShotBallToggle;
+    if (asistantShotBallToggle) {
+      moveHand(0.9);
+    } else {
+      moveHand(0.0);
+    }
   }
 
   private void wheelsUp() {
@@ -208,10 +326,10 @@ public class Robot extends TimedRobot implements RobotMap {
 
     if (velocity != 0 && rotation == 0) {
       oi.drive.tankDrive(velocity, velocity);
-      setDriveWheels(true);
+      // setDriveWheels(true);
     } else {
       if (rotation != 0 || velocity != 0) {
-        setDriveWheels(false);
+        // setDriveWheels(false);
       }
       if (rotation != 0 && velocity == 0) {
         oi.drive.tankDrive(-rotation, rotation);
@@ -232,9 +350,9 @@ public class Robot extends TimedRobot implements RobotMap {
   private void toogleHand() {
     handToggle = !handToggle;
     if (handToggle) {
-      oi.hanSolenoid.set(Value.kForward);
+      oi.elevateRobotSolenoid.set(Value.kForward);
     } else {
-      oi.hanSolenoid.set(Value.kReverse);
+      oi.elevateRobotSolenoid.set(Value.kReverse);
     }
   }
 
@@ -311,11 +429,12 @@ public class Robot extends TimedRobot implements RobotMap {
     setArmToPosition(currentLevel - (15 + additionalFactor));
   }
 
-  private double getDistanceSonar(){
+  private double getDistanceSonar() {
     double valueToInches_2 = 1 / 20.5;
     double distanceX = oi.frontSonar.getAverageValue();
     double distance = (distanceX - 237) * valueToInches_2 + 12;
-    int distanceInt=(int) distance;
+    int distanceInt = (int) distance;
     return distanceInt;
   }
+
 }
