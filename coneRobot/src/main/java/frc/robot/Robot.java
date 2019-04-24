@@ -9,12 +9,26 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
+import edu.wpi.cscore.CvSink;
+import edu.wpi.cscore.CvSource;
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.commands.DriveWithJoysticks;
+import frc.robot.commands.OpenHand;
+import frc.robot.commands.SetArmSetPoint;
+import frc.robot.subsystems.Driver;
 
 /**
  * TEAM FORCE 4707.
@@ -23,7 +37,7 @@ public class Robot extends TimedRobot implements RobotMap {
   private static OI oi;
   private boolean elevateRobotToggle, wheelsUpToggle, balanceHelperToggle, gearChangeToggle;
 
-  // private SpeedControllerGroup speedControllerDriveRight;
+  // private SpeedControllerGroup xspeedControllerDriveRight;
   // private SpeedControllerGroup speedControllerDriveLeft;
   // private DifferentialDrive drive;
 
@@ -33,7 +47,11 @@ public class Robot extends TimedRobot implements RobotMap {
   private boolean isDiskLevelEnable = false;
   private int armEncoderCount;
   private int currentLevel;
-  
+
+  DriveWithJoysticks driveWithJoysticks;
+  Command m_teleOpCommand;
+  SendableChooser<Command> m_chooser = new SendableChooser<>();
+
   private static final double MAX_VELOCITY = 0.8;
   private static final double MAX_VELOCITY_ARM = 0.3;
 
@@ -51,115 +69,52 @@ public class Robot extends TimedRobot implements RobotMap {
   private static final int LEVEL_1 = 1;
   private static final int LEVEL_2 = 2;
   private static final int LEVEL_3 = 3;
-  
+
   @Override
   public void robotInit() {
     oi = OI.getInstace();
-    oi.initTalons();
-    oi.initNeumatics();
-    oi.initEncoders();
+    oi.initSetup();
+    // oi.initTalons();
+    // oi.initNeumatics();
+    // oi.initEncoders();
+    m_chooser.setDefaultOption("Default Auto", new DriveWithJoysticks());
+    SmartDashboard.putData("Auto mode", m_chooser);
+  }
+
+  @Override
+  public void autonomousInit() {
+    if (m_teleOpCommand != null) {
+      m_teleOpCommand.cancel();
+    }
   }
 
   @Override
   public void teleopInit() {
-    // speedControllerDriveRight = new SpeedControllerGroup(oi.rightFrontTalon, oi.rightSlaveTalon);
-    // speedControllerDriveLeft = new SpeedControllerGroup(oi.leftFrontTalon, oi.leftSlaveTalon);
-    // drive = new DifferentialDrive(speedControllerDriveLeft, speedControllerDriveRight);
-    setDriveWheels(true);
-  }
+    m_teleOpCommand = m_chooser.getSelected();
 
-  @Override
-  public void testPeriodic() {
-    super.testPeriodic();
+    /*
+     * String autoSelected = SmartDashboard.getString("Auto Selector", "Default");
+     * switch(autoSelected) { case "My Auto": autonomousCommand = new
+     * MyAutoCommand(); break; case "Default Auto": default: autonomousCommand = new
+     * ExampleCommand(); break; }
+     */
+
+    // schedule the autonomous command (example)
+    if (m_teleOpCommand != null) {
+      m_teleOpCommand.start();
+    }
+    Scheduler.getInstance().add(new SetArmSetPoint());
   }
 
   @Override
   public void teleopPeriodic() {
-    double velocity = oi.driverJoystick.getRawAxis(1) * MAX_VELOCITY;
-    double rotation = oi.driverJoystick.getRawAxis(4) * MAX_VELOCITY;
-    driveRobot(velocity, rotation);
-    double upArmVelocity = oi.driverJoystick.getRawAxis(2) * MAX_VELOCITY_ARM;
-    double downArmVelocity = oi.driverJoystick.getRawAxis(3) * MAX_VELOCITY;
-    double armVelocity = 0;
-    boolean armLimitSwitchActivated = oi.limitSwitchArm.get();
-    armEncoderCount = oi.armEncoder.get();
-
-    if (oi.driverJoystick.getRawButtonPressed(BTN_A_AXIS)) {
-      elevateRobot();
-    }
-
-    if (oi.driverJoystick.getRawButtonPressed(BTN_B_AXIS)) {
-      wheelsUp();
-    }
-
-    if (oi.driverJoystick.getRawButtonPressed(BTN_Y_AXIS)){
-      changeGear();
-    }
-
-    if (oi.driverJoystick.getRawButtonPressed(BTN_R1_AXIS)) {
-      moveHand(0.7);
-    } else if ((oi.driverJoystick.getRawButtonReleased(BTN_R1_AXIS))) {
-      moveHand(0.0);
-    }
-
-    if (oi.driverJoystick.getRawButtonPressed(BTN_L1_AXIS)) {
-      moveHand(0.0);
-    } else if ((oi.driverJoystick.getRawButtonReleased(BTN_L1_AXIS))) {
-      moveHand(-0.7);
-    }
-
-    if (upArmVelocity > 0d && (armEncoderCount > 15 || asistanceEnabled)) {
-      moveArm(-upArmVelocity);
-      armVelocity = -upArmVelocity;
-    } else if (downArmVelocity > 0 && (armEncoderCount < 603 || asistanceEnabled)) {
-      moveArm(downArmVelocity);
-      armVelocity = downArmVelocity;
-    } else {
-      armVelocity = 0d;
-      moveArm(armVelocity);
-    }
-    
-    // Set level of the arm base on the X btn and the values
-    if (oi.driverJoystick.getRawButtonPressed(BTN_X_AXIS)) {
-      if (isDiskLevelEnable) {
-        oi.hanSolenoid.set(Value.kReverse);
-        moveHand(0.0);
-      } else {
-        oi.hanSolenoid.set(Value.kForward);
-        moveHand(-0.7);
-      }
-      setArmBallToLevel(LEVEL_0);
-    }
-    //ASSISTANCE CONTROLS Assistance controls
-    // take the disk from the cargo
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_BACK_AXIS)) {
-      grabDisk();
-    }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_START_AXIS)) {
-      putDisk();
-    }
-
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_A_AXIS)) {
-      isDiskLevelEnable = !isDiskLevelEnable;
-      if (!isDiskLevelEnable)
-        oi.hanSolenoid.set(Value.kForward);
-    }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_X_AXIS)) {
-      setArmBallToLevel(LEVEL_1);
-    }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_Y_AXIS)) {
-      setArmBallToLevel(LEVEL_2);
-    }
-    if (oi.asistantJoystick.getRawButtonPressed(BTN_B_AXIS)) {
-      setArmBallToLevel(LEVEL_3);
-    }
-
-    SmartDashboard.putString("LevelActivated", isDiskLevelEnable ? "Disk" : "Ball");
-    SmartDashboard.putBoolean("LimitSwitch ", armLimitSwitchActivated);
-    SmartDashboard.putNumber("count ", armEncoderCount);
-    SmartDashboard.putBoolean("ARM Manual ", isManualArmEnabled);
-    SmartDashboard.putNumber("ARM Velocity ", oi.asistantJoystick.getRawAxis(1));
-    SmartDashboard.putNumber("distance Inches ", getDistanceSonar());
+    double velocity = oi.driverJoystick.getRawAxis(1);
+    double rotation = oi.driverJoystick.getRawAxis(4);
+    // driveRobot(velocity, rotation);
+    Scheduler.getInstance().run();
+    // if (oi.asistantJoystick.getRawButton(BTN_A_AXIS)){
+    //   Scheduler.getInstance().add(new SetArmSetPoint());
+    // }
   }
 
   private void elevateRobot() {
@@ -229,12 +184,21 @@ public class Robot extends TimedRobot implements RobotMap {
     wheelsUpToggle = wheelsUp;
   }
 
-  private void toogleHand() {
+  private void toogleHandFWD() {
     handToggle = !handToggle;
     if (handToggle) {
-      oi.hanSolenoid.set(Value.kForward);
+      moveHand(0.7);
     } else {
-      oi.hanSolenoid.set(Value.kReverse);
+      moveHand(0.0);
+    }
+  }
+
+  private void toogleHandRVS() {
+    handToggle = !handToggle;
+    if (handToggle) {
+      moveHand(-0.7);
+    } else {
+      moveHand(0.0);
     }
   }
 
@@ -311,11 +275,11 @@ public class Robot extends TimedRobot implements RobotMap {
     setArmToPosition(currentLevel - (15 + additionalFactor));
   }
 
-  private double getDistanceSonar(){
+  private double getDistanceSonar() {
     double valueToInches_2 = 1 / 20.5;
     double distanceX = oi.frontSonar.getAverageValue();
     double distance = (distanceX - 237) * valueToInches_2 + 12;
-    int distanceInt=(int) distance;
+    int distanceInt = (int) distance;
     return distanceInt;
   }
 }

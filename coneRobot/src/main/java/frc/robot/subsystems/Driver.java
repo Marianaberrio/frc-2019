@@ -10,6 +10,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.robot.OI;
+import frc.robot.commands.DriveWithJoysticks;
 
 /**
  * Add your docs here.
@@ -20,7 +21,7 @@ public class Driver extends Subsystem {
   @Override
   public void initDefaultCommand() {
     // Set the default command for a subsystem here.
-    // setDefaultCommand(new MySpecialCommand());
+    setDefaultCommand(new DriveWithJoysticks());
   }
 
   public void stop() {
@@ -37,5 +38,9 @@ public class Driver extends Subsystem {
 
   public void rotate(double direction) {
     drive.tankDrive(-direction, direction);
+  }
+
+  public void tank(double leftSpeed, double rightSpeed){
+    drive.tankDrive(leftSpeed, rightSpeed);
   }
 }

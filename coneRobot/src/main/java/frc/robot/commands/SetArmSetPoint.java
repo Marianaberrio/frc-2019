@@ -8,9 +8,13 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.command.Command;
+import frc.robot.OI;
 
 public class SetArmSetPoint extends Command {
+  private OI oi = OI.getInstace();
+
   public SetArmSetPoint() {
+    requires(oi.arm);
     // Use requires() here to declare subsystem dependencies
     // eg. requires(chassis);
   }
@@ -23,6 +27,7 @@ public class SetArmSetPoint extends Command {
   // Called repeatedly when this Command is scheduled to run
   @Override
   protected void execute() {
+    oi.arm.moveArm(oi.getArmDirection());
   }
 
   // Make this return true when this Command no longer needs to run execute()

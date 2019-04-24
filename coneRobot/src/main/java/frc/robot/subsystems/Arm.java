@@ -16,16 +16,16 @@ import frc.robot.OI;
  * Arm Subsystem
  */
 public class Arm extends Subsystem {
-  private OI io = OI.getInstace();
+  private OI oi = OI.getInstace();
 
   @Override
   public void initDefaultCommand() {
   }
 
   public void initPossition() {
-    while (!io.limitSwitchArm.get()) {
-      io.armTalon.set(ControlMode.PercentOutput, -0.2);
-    }
+    // while (!io.limitSwitchArm.get()) {
+    //   io.armTalon.set(ControlMode.PercentOutput, -0.2);
+    // }
   }
 
   public void setBallLevel(int level) {
@@ -34,5 +34,9 @@ public class Arm extends Subsystem {
 
   public void setDiskLevel(int level) {
 
+  }
+
+  public void moveArm(double direction){
+    oi.armTalon.set(ControlMode.PercentOutput, direction);
   }
 }

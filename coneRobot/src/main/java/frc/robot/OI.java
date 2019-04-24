@@ -27,6 +27,8 @@ import frc.robot.subsystems.Claw;
 public class OI implements RobotMap {
 
   private static OI _io;
+  public static final double MAX_VELOCITY = 1.0;
+  public static final double MAX_VELOCITY_ARM = 1.0;
   //// joystick.
   public Joystick driverJoystick = new Joystick(JOYSTICK_MAIN_PORT);
   public Joystick asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
@@ -43,6 +45,7 @@ public class OI implements RobotMap {
   //subsystems
   public Claw hand;
   public Arm arm;
+  public double velocity, rotation;
 
   public static OI getInstace() {
     if (_io == null)
@@ -57,39 +60,59 @@ public class OI implements RobotMap {
     rightSlaveTalon = new WPI_TalonSRX(TALON_DT_RIGHT_BACK_PORT);
     leftSlaveTalon = new WPI_TalonSRX(TALON_DT_LEFT_BACK_PORT);
     armTalon = new WPI_TalonSRX(TALON_ARM_PORT);
-    handTalon = new WPI_TalonSRX(TALON_HAND_PORT);
+    // handTalon = new WPI_TalonSRX(TALON_HAND_PORT);
 
     driverJoystick = new Joystick(JOYSTICK_MAIN_PORT);
     asistantJoystick = new Joystick(JOYSTICK_SECUNDARY_PORT);
 
-    limitSwitchArm = new DigitalInput(LIMIT_SWITCH_ARM_PORT);
-    frontSonar = new AnalogInput(0);
-    frontSonar.setAccumulatorInitialValue(ULTRASONIC_SONAR_PORT);
-    mainCompressor = new Compressor(COMPRESOR_MAIN_PORT);
+    // limitSwitchArm = new DigitalInput(LIMIT_SWITCH_ARM_PORT);
+    // frontSonar = new AnalogInput(0);
+    // frontSonar.setAccumulatorInitialValue(ULTRASONIC_SONAR_PORT);
+    // mainCompressor = new Compressor(COMPRESOR_MAIN_PORT);
 
-    elevateRobotSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_ELEVATE_FWD_PORT, SELENOID_DOUBLE_ELEVATE_RVS_PORT);
-    raptorWheelSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_WHEELS_FWD_PORT, SELENOID_DOUBLE_WHEELS_RVS_PORT);
-    changeGearSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_GEAR_FWD_PORT, SELENOID_DOUBLE_GEAR_RVS_PORT);
-    hanSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_HAND_FWD_PORT, SELENOID_DOUBLE_HAND_RVS_PORT);
+    // elevateRobotSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_ELEVATE_FWD_PORT, SELENOID_DOUBLE_ELEVATE_RVS_PORT);
+    // raptorWheelSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_WHEELS_FWD_PORT, SELENOID_DOUBLE_WHEELS_RVS_PORT);
+    // changeGearSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_GEAR_FWD_PORT, SELENOID_DOUBLE_GEAR_RVS_PORT);
+    // hanSolenoid = new DoubleSolenoid(SELENOID_DOUBLE_HAND_FWD_PORT, SELENOID_DOUBLE_HAND_RVS_PORT);
 
-    armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
-    driveRightEncoder = new Encoder(ENCODER_DT_RIGHT_CHANNEL_A, ENCODER_DT_RIGHT_CHANNEL_B, false,
-        Encoder.EncodingType.k4X);
-    driveLeftEncoder = new Encoder(ENCODER_DT_LEFT_CHANNEL_A, ENCODER_DT_LEFT_CHANNEL_B, false,
-        Encoder.EncodingType.k4X);
+    // armEncoder = new Encoder(ENCODER_ARM_CHANNEL_A, ENCODER_ARM_CHANNEL_B, false, Encoder.EncodingType.k4X);
+    // driveRightEncoder = new Encoder(ENCODER_DT_RIGHT_CHANNEL_A, ENCODER_DT_RIGHT_CHANNEL_B, false,
+    //     Encoder.EncodingType.k4X);
+    // driveLeftEncoder = new Encoder(ENCODER_DT_LEFT_CHANNEL_A, ENCODER_DT_LEFT_CHANNEL_B, false,
+    //     Encoder.EncodingType.k4X);
   }
 
   public void initSetup() {
     initTalons();
     initDriveTrain();
-    initEncoders();
-    initNeumatics();
-    // initSubSystems();
+    // initEncoders();
+    // initNeumatics();
+    initSubSystems();
   }
 
   public void initSubSystems() {
     hand = new Claw();
     arm = new Arm();
+  }
+
+  public double getVelocity(){
+    double velocity = driverJoystick.getRawAxis(1);
+    return Math.abs(velocity) > 0.04 ? (velocity * MAX_VELOCITY) : 0d;
+  }
+
+  public double getRightSpeed(){
+    double rigthSpeed = driverJoystick.getRawAxis(5);
+    return Math.abs(rigthSpeed) > 0.04 ? (rigthSpeed * MAX_VELOCITY) : 0d;
+  }
+
+  public double getRotation(){
+    double rotation = driverJoystick.getRawAxis(4);
+    return rotation != 0d ? (rotation * MAX_VELOCITY) : 0d;
+  }
+
+  public double getArmDirection(){
+    double direction = asistantJoystick.getRawAxis(5);
+    return Math.abs(direction) > 0.10 ? (direction * MAX_VELOCITY_ARM): 0d;
   }
 
   public void initDriveTrain() {
@@ -104,7 +127,7 @@ public class OI implements RobotMap {
     rightFrontTalon.configFactoryDefault();
     rightSlaveTalon.configFactoryDefault();
     armTalon.configFactoryDefault();
-    handTalon.configFactoryDefault();
+    // handTalon.configFactoryDefault();
   }
 
   public void initNeumatics() {
