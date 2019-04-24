@@ -16,9 +16,11 @@ package frc.robot;
 public interface RobotMap {
   // following variables to use with your drivetrain subsystem.
   // Talon ports
-  public static final int TALON_DT_RIGHT_PORT = 5;
-  public static final int TALON_DT_LEFT_PORT = 8;//
-  public static final int TALON_ARM_PORT = 2;
+  public static final int TALON_DT_RIGHT_PORT = 8;
+  public static final int TALON_DT_RIGHT_BACK_PORT = 7;
+  public static final int TALON_DT_LEFT_PORT = 2;
+  public static final int TALON_DT_LEFT_BACK_PORT = 1;
+  public static final int TALON_ARM_PORT = 6;
   public static final int TALON_HAND_PORT = 3;
 
   // Neumatics
